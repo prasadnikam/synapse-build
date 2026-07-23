@@ -1,1 +1,392 @@
-[]
+[
+  {
+    "id": "community-0",
+    "title": "Worktree Sync, File Discovery & Overlay Integration",
+    "community": 0,
+    "difficulty": "Medium",
+    "estimated_minutes": 7500,
+    "concept_count": 500,
+    "generated": "July 2026",
+    "chapters": [
+      {
+        "id": "ch01",
+        "number": 1,
+        "title": "Filesystem Foundations",
+        "difficulty": "Easy",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "Bridging Grok to the Filesystem",
+        "key_concepts": ["ToolInput", "ServerId", "ShellWorktreeType"],
+        "build_steps": [
+          "Define FsReadFileReq struct with path field",
+          "Define FsWriteFileReq struct with path, content, create_dirs",
+          "Add Fs variants to crate::types::tool_io::ToolInput enum",
+          "Implement execute() for each Fs request scoped by ServerId",
+          "Wire ToolInput::FsReadFile/FsWriteFile into the dispatch match",
+          "Scope filesystem access using ShellWorktreeType"
+        ],
+        "types_to_implement": [
+          "ToolInput (crate::types::tool_io)",
+          "ServerId (crate::types::ids)",
+          "ShellWorktreeType (crate::types::worktree)",
+          "ToolOutput (crate::types::tool_io)",
+          "WorkspaceHandle (crate::workspace)",
+          "ToolError (crate::types::errors)"
+        ]
+      },
+      {
+        "id": "ch02",
+        "number": 2,
+        "title": "File I/O & Access Control",
+        "difficulty": "Easy",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "Giving the Model a Hand to Write Files",
+        "key_concepts": ["FsWriteFileReq", ".execute()", "Request/Result contract"],
+        "build_steps": [
+          "Define FsWriteFileReq struct with core fields",
+          "Add derives for Debug and Deserialize",
+          "Implement execute() to create parent directories",
+          "Write file contents via execute()",
+          "Wire FsWriteFileReq into the tool dispatcher"
+        ],
+        "types_to_implement": [
+          "FsWriteFileReq (ext_fs.rs L129)",
+          ".execute() (ext_fs.rs L130)",
+          "ExtFsOp / ToolOp trait",
+          "ExtContext / WorkspaceHandle",
+          "FsWriteFileResp",
+          "ExtError / ExtResult",
+          "Tool-calling dispatcher"
+        ]
+      },
+      {
+        "id": "ch03",
+        "number": 3,
+        "title": "Discovery, Search & Indexing",
+        "difficulty": "Easy-medium",
+        "estimated_minutes": 120,
+        "concept_count": 8,
+        "tag": "BUILD",
+        "tagline": "Turning Files Into Searchable Knowledge",
+        "key_concepts": ["Search Query", "Indexing", "Search Engine", "Data Record", "Search Result"],
+        "build_steps": [
+          "Define FileIndexEntry struct with path and metadata",
+          "Build FileIndex with in-memory HashMap store",
+          "Implement embedded_search_tools.rs scoring function",
+          "Implement path_suggestions.rs fuzzy matcher",
+          "Harden path_suggestions_production.rs with limits",
+          "Wire search_remote_sync.rs to refresh index on demand"
+        ],
+        "types_to_implement": [
+          "DiscoveryRequest (discovery/discovery_request.rs)",
+          "SearchEngineOp trait (crate::search_engine_ops)"
+        ]
+      },
+      {
+        "id": "ch04",
+        "number": 4,
+        "title": "Storage & Persistence",
+        "difficulty": "Medium",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "Giving Grok's Agent a Durable Memory",
+        "key_concepts": [
+          "Memory Log (Append-Only Event Log)",
+          "Checkpointing",
+          "Index Manager",
+          "Recovery / Replay"
+        ],
+        "build_steps": [
+          "Define MemoryLogEntry struct and append-only writer",
+          "Implement IndexManager mapping ids to file offsets",
+          "Wire append() to update the index on every write",
+          "Define Checkpoint struct and snapshot writer",
+          "Implement recover() replaying log entries after last checkpoint"
+        ],
+        "types_to_implement": [
+          "Checkpoint (grok_build::storage::checkpoint)",
+          "CheckpointWriter (grok_build::storage::checkpoint)",
+          "MemoryLogEntry (grok_build::storage::memory_log)",
+          "LogOp enum (grok_build::storage::memory_log)",
+          "IndexManager (grok_build::storage::index_manager)",
+          "RecoveryManager (grok_build::storage::recovery)",
+          "StorageError / StorageResult (grok_build::storage)",
+          "SessionState (grok_build::session)"
+        ]
+      },
+      {
+        "id": "ch05",
+        "number": 5,
+        "title": "Worktree Core Operations",
+        "difficulty": "Medium",
+        "estimated_minutes": 105,
+        "concept_count": 7,
+        "tag": "BUILD",
+        "tagline": "Isolated Git Workspaces for Agent Edits",
+        "key_concepts": [
+          "Worktree as an Isolated Checkout",
+          "Worktree Locking and Concurrency Safety",
+          "Pruning Stale Worktrees"
+        ],
+        "build_steps": [
+          "Define WorktreeManager struct with repo root path",
+          "Implement run_git_command helper for subprocess calls",
+          "Implement create_worktree(path, branch) method",
+          "Implement list_worktrees() returning parsed entries",
+          "Implement remove_worktree(path) with existence check",
+          "Add unit tests covering create, list, remove lifecycle"
+        ],
+        "types_to_implement": [
+          "WorktreeHandle (crate::git_worktree)",
+          "WorktreeConfig (crate::git_worktree)",
+          "WorktreeError (crate::git_worktree)",
+          "WorktreeResult (crate::git_worktree)",
+          "GitCommandRunner trait (crate::git_worktree)",
+          "ProcessCommandRunner (crate::git_worktree)",
+          "WorktreeRegistry (crate::session)"
+        ]
+      },
+      {
+        "id": "ch06",
+        "number": 6,
+        "title": "Session & State Management",
+        "difficulty": "Medium",
+        "estimated_minutes": 105,
+        "concept_count": 7,
+        "tag": "BUILD",
+        "tagline": "The Ledger Behind Every Agent Turn",
+        "key_concepts": [
+          "Session State Object",
+          "Session Update Events",
+          "Active Sessions Registry",
+          "Plan Approval & Resume Flow",
+          "Goal Strategist Binding"
+        ],
+        "build_steps": [
+          "Define SessionState struct with core fields",
+          "Implement update_goal and update_plan_status methods",
+          "Wire plan_approval_resume.rs to call update_plan_status",
+          "Add goal_strategist.rs hook for update_goal",
+          "Emit structured log entries from log.rs on state changes",
+          "Write tests.rs covering state transitions"
+        ],
+        "types_to_implement": [
+          "SessionUpdate enum (extensions::session_updates)",
+          "SessionState struct (extensions::session_updates)",
+          "SessionUpdateHandler trait",
+          "PlanApprovalResume struct (plan_approval_resume.rs)",
+          "GoalStrategist struct (goal_strategist.rs)",
+          "WorkspaceUser struct (workspace_user.rs)",
+          "SessionLogger (log.rs)",
+          "SessionError enum"
+        ]
+      },
+      {
+        "id": "ch07",
+        "number": 7,
+        "title": "Git Backend Integration",
+        "difficulty": "Medium",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "Fast, Isolated Git Worktrees for Agents",
+        "key_concepts": [
+          "The .git Directory vs. Linked-Worktree .git File",
+          "Reflink (CoW) Directory Copy as the Standalone Worktree Strategy",
+          "Skip-List Filtering of Transient & Stale Git State",
+          "Sharded Parallel Copy for Large Object Stores",
+          "The grok-worktree-source Lineage Marker"
+        ],
+        "build_steps": [
+          "Define GitDirCopyError enum for copy failures",
+          "Implement is_git_dir path validator",
+          "Implement recursive copy_gitdir_contents walker",
+          "Implement public copy_gitdir entry point",
+          "Add unit tests with tempfile fixtures",
+          "Wire copy_gitdir into worktree creation call site"
+        ],
+        "types_to_implement": [
+          "GitDirLayout (crate::copy_gitdir)",
+          "CopyGitDirReq (crate::copy_gitdir)",
+          "CopyGitDirError (crate::copy_gitdir)",
+          "WorktreeOp trait (crate::worktree_ops)",
+          "WorktreeCtx (crate::worktree_ops)",
+          "GitProcessRunner (crate::git_proc)"
+        ]
+      },
+      {
+        "id": "ch08",
+        "number": 8,
+        "title": "Environment & Configuration",
+        "difficulty": "Easy-medium",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "Setting Up Grok's Execution Environments",
+        "key_concepts": [
+          "GROK_HOME Path Resolution",
+          "Format-Preserving TOML Config Edits",
+          "Project-Local Environment Loading (.envrc)",
+          "Pluggable Language Environment Providers"
+        ],
+        "build_steps": [
+          "Implement GrokHomePaths resolver in grok_home_paths.rs",
+          "Define Config struct and I/O in config_toml_edit.rs",
+          "Define EnvKind enum and EnvProvider trait",
+          "Implement Python, Rust, and Builtin providers",
+          "Wire providers and config together in envrc.rs"
+        ],
+        "types_to_implement": [
+          "EnvRc struct (workspace/src/envrc.rs)",
+          "ConfigToml struct (workspace/src/config_toml_edit.rs)",
+          "LanguageEnv trait",
+          "PythonEnv (workspace/src/python.rs)",
+          "RustEnv (workspace/src/rust.rs)",
+          "BuiltinDefaults (workspace/src/builtin.rs)",
+          "GrokHomePaths (workspace/src/grok_home_paths.rs)",
+          "ToolchainInfo"
+        ]
+      },
+      {
+        "id": "ch09",
+        "number": 9,
+        "title": "Installation & Package Management",
+        "difficulty": "Medium",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "How Grok Installs and Manages Plugins",
+        "key_concepts": [
+          "Plugin Bundle Format",
+          "Plugin Registry",
+          "Installation Flow",
+          "Legacy Format Compatibility",
+          "Asset Resizing"
+        ],
+        "build_steps": [
+          "Define PluginRegistry struct and lookup method",
+          "Define PluginBundle struct for packaged plugin contents",
+          "Implement asset resize utility for bundle icons",
+          "Implement legacy_0_4_10 format converter",
+          "Implement Installer orchestrating registry, bundle, and legacy paths"
+        ],
+        "types_to_implement": [
+          "PluginRegistry (plugins::registry)",
+          "PluginManifest (plugins::registry)",
+          "PluginBundle (plugins::bundle)",
+          "Installer (plugins::installer)",
+          "LegacyAdapter (plugins::legacy_0_4_10)",
+          "ImageResizer (plugins::resize)",
+          "RegistryError / BundleError / InstallError / ResizeError"
+        ]
+      },
+      {
+        "id": "ch10",
+        "number": 10,
+        "title": "Communication & Networking",
+        "difficulty": "Medium-hard",
+        "estimated_minutes": 90,
+        "concept_count": 6,
+        "tag": "BUILD",
+        "tagline": "The Hub That Lets Grok Act",
+        "key_concepts": [
+          "Channel Abstraction",
+          "Wire Protocol Round-Trip",
+          "Local Terminal Command Execution",
+          "REST Interface"
+        ],
+        "build_steps": [
+          "Define TerminalCommand and TerminalResponse wire types",
+          "Write round-trip serialize/deserialize test harness",
+          "Define Channel trait with send method",
+          "Implement Channel for local process transport",
+          "Implement Channel for REST transport",
+          "Wire hub dispatch to select Channel implementation"
+        ],
+        "types_to_implement": [
+          "HubChannel (crate::hub::hub_channel)",
+          "HubChannelHandle (crate::hub::hub_channel)",
+          "HubMessage enum (crate::hub::hub_channel)",
+          "TerminalCommandReq (crate::hub::terminal_command)",
+          "WireRoundTripReq / WireRoundTripResp (crate::hub::wire_round_trip)",
+          "LocalTerminal (crate::hub::local_terminal)",
+          "RestClient (crate::hub::rest)",
+          "HubServer (crate::hub::hub_server)"
+        ]
+      },
+      {
+        "id": "ch11",
+        "number": 11,
+        "title": "Security & Trust Architecture",
+        "difficulty": "Hard",
+        "estimated_minutes": 75,
+        "concept_count": 5,
+        "tag": "BUILD",
+        "tagline": "Trust Architecture for Autonomous Hooks",
+        "key_concepts": [
+          "Trust Score",
+          "Evidence Records",
+          "Embedding-Based Similarity",
+          "Marketplace Vetting"
+        ],
+        "build_steps": [
+          "Define Evidence struct and EvidenceKind enum",
+          "Implement EvidenceStore for collection and retrieval",
+          "Define EmbeddingVector type and embed_evidence function",
+          "Implement ReputationScore lookup in marketplace.rs",
+          "Define TrustScore struct combining similarity and reputation",
+          "Expose is_trusted threshold check for callers"
+        ],
+        "types_to_implement": [
+          "TrustScore (trust.rs)",
+          "TrustEvaluator trait (trust.rs)",
+          "EvidenceRecord (evidence.rs)",
+          "EmbeddingVector (embedding.rs)",
+          "MarketplaceEntry (marketplace.rs)",
+          "TrustResult = Result<_, TrustError>",
+          "TrustGate struct (trust.rs)",
+          "PublisherRegistry (marketplace.rs)"
+        ]
+      },
+      {
+        "id": "ch12",
+        "number": 12,
+        "title": "Testing & Concurrency Patterns",
+        "difficulty": "Hard",
+        "estimated_minutes": 150,
+        "concept_count": 10,
+        "tag": "BUILD",
+        "tagline": "Testing Concurrency in Grok's Session Layer",
+        "key_concepts": [
+          "Async Session Test Harness",
+          "Session Cancellation (Blitz Cancel)",
+          "Session Forking",
+          "Subagent Orphan Reconciliation",
+          "Concurrent Convergence Testing"
+        ],
+        "build_steps": [
+          "Build shared mock session test harness",
+          "Test reverse-request/session_id correlation",
+          "Write test_fork_session.rs for concurrent forking",
+          "Write test_blitz_cancel.rs for rapid cancel races",
+          "Write test_subagent_orphan_reconcile.rs",
+          "Write test_xai_session_update.rs for concurrent updates"
+        ],
+        "types_to_implement": [
+          "SessionId (session::acp)",
+          "AcpSession (session::acp::session)",
+          "ReverseRequest (session::acp::reverse_request)",
+          "BlitzCancel / CancelToken (session::acp::cancel)",
+          "SubagentHandle (session::acp::subagent)",
+          "ForkSessionReq / ForkedSession (session::acp::fork)",
+          "UserPromptLoader (session::acp::prompts)",
+          "SessionRegistry (session::acp::registry)"
+        ]
+      }
+    ]
+  }
+]
