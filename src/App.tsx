@@ -22,7 +22,7 @@ export default function App() {
       </nav>
       <Routes>
         <Route path="/"               element={<Dashboard />} />
-        <Route path="/module/:id"     element={<ModuleView />} />
+        <Route path="/module/:moduleId/:chapterId" element={<ModuleView />} />
         <Route path="/experiments"    element={<ExperimentsPage />} />
       </Routes>
     </BrowserRouter>

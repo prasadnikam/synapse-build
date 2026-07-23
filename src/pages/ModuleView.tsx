@@ -1,79 +1,87 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { getTask, type KadooshTask, type ComputationEvent } from '../api/kadoosh'
-import { StatusBadge, PriorityBadge } from '../components/StatusBadge'
 import { DocViewer } from '../components/DocViewer'
-import { TaskStream } from '../components/TaskStream'
-import type { CurriculumEntry } from './Dashboard'
+import type { CurriculumModule, Chapter } from './Dashboard'
 
-type Tab = 'prd' | 'architecture' | 'stories' | 'tasklog'
+type Tab = 'prd' | 'architecture' | 'stories' | 'concepts'
+
+const DIFF_COLOR: Record<string, string> = {
+  Easy: 'text-green-400',
+  'Easy-medium': 'text-lime-400',
+  Medium: 'text-yellow-400',
+  'Medium-hard': 'text-orange-400',
+  Hard: 'text-red-400',
+}
 
 export function ModuleView() {
-  const { id } = useParams<{ id: string }>()
+  const { moduleId, chapterId } = useParams<{ moduleId: string; chapterId: string }>()
   const nav = useNavigate()
-  const taskId = Number(id)
 
-  const [task, setTask] = useState<KadooshTask | null>(null)
-  const [entry, setEntry] = useState<CurriculumEntry | null>(null)
+  const [chapter, setChapter] = useState<Chapter | null>(null)
+  const [module, setModule] = useState<CurriculumModule | null>(null)
   const [tab, setTab] = useState<Tab>('prd')
   const [docs, setDocs] = useState<Record<string, string | null>>({ prd: null, architecture: null, stories: null })
-  const [initialEvents, setInitialEvents] = useState<ComputationEvent[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!taskId) return
-    getTask(taskId).then(setTask).finally(() => setLoading(false))
-
     fetch('/docs/curriculum.json')
       .then(r => r.ok ? r.json() : [])
-      .then((data: CurriculumEntry[]) => {
-        const e = data.find(x => x.task_id === taskId)
-        if (!e) return
-        setEntry(e)
+      .then((data: CurriculumModule[]) => {
+        const mod = data.find(m => m.id === moduleId)
+        if (!mod) return
+        setModule(mod)
+        const ch = mod.chapters.find(c => c.id === chapterId)
+        if (ch) setChapter(ch)
+
+        // slugify module id to filename: community-0-worktree-sync
+        const slug = moduleId
         const paths: Record<string, string> = {
-          prd:          e.prd          ? `/docs/prds/${e.prd}`                   : '',
-          architecture: e.architecture ? `/docs/architecture/${e.architecture}`  : '',
-          stories:      e.stories      ? `/docs/stories/${e.stories}`            : '',
+          prd:          `/docs/prds/${slug}.md`,
+          architecture: `/docs/architecture/${slug}.md`,
+          stories:      `/docs/stories/${slug}.md`,
         }
         Object.entries(paths).forEach(([key, path]) => {
-          if (!path) return
-          fetch(path).then(r => r.ok ? r.text() : null).then(text => {
-            setDocs(prev => ({ ...prev, [key]: text }))
-          })
+          fetch(path)
+            .then(r => r.ok ? r.text() : null)
+            .then(text => setDocs(prev => ({ ...prev, [key]: text })))
         })
       })
-  }, [taskId])
+      .finally(() => setLoading(false))
+  }, [moduleId, chapterId])
 
-  useEffect(() => {
-    if (!task?.computation_graph) return
-    try {
-      setInitialEvents(JSON.parse(task.computation_graph) as ComputationEvent[])
-    } catch {}
-  }, [task?.computation_graph])
-
-  if (loading) return <div className="min-h-screen bg-zinc-950 text-zinc-500 flex items-center justify-center">Loading…</div>
-  if (!task) return <div className="min-h-screen bg-zinc-950 text-red-400 flex items-center justify-center">Task not found</div>
+  if (loading) return (
+    <div className="min-h-screen bg-zinc-950 text-zinc-500 flex items-center justify-center">Loading…</div>
+  )
+  if (!chapter) return (
+    <div className="min-h-screen bg-zinc-950 text-red-400 flex items-center justify-center">Chapter not found</div>
+  )
 
   const tabs: { key: Tab; label: string }[] = [
     { key: 'prd',          label: 'PRD' },
     { key: 'architecture', label: 'Architecture' },
     { key: 'stories',      label: 'Stories' },
-    { key: 'tasklog',      label: 'Task Log' },
+    { key: 'concepts',     label: 'Concepts' },
   ]
+
+  const diffColor = DIFF_COLOR[chapter.difficulty] ?? 'text-zinc-400'
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <header className="border-b border-zinc-800 px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-start gap-4">
-          <button onClick={() => nav('/')} className="text-zinc-500 hover:text-zinc-300 text-sm mt-0.5">← Back</button>
+          <button onClick={() => nav('/')} className="text-zinc-500 hover:text-zinc-300 text-sm mt-0.5">
+            ← Back
+          </button>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-base font-semibold text-zinc-100">{task.title}</h1>
-              <StatusBadge status={task.status} />
-              <PriorityBadge priority={task.priority} />
-              <span className="text-xs text-zinc-600 ml-auto">#{task.id}</span>
+              <span className="text-xs text-zinc-600 font-mono">Ch {chapter.number}</span>
+              <h1 className="text-base font-semibold text-zinc-100">{chapter.title}</h1>
+              <span className={`text-xs font-medium ${diffColor}`}>{chapter.difficulty}</span>
+              <span className="text-xs text-zinc-600 ml-auto">
+                {chapter.concept_count} concepts · {(chapter.estimated_minutes / 60).toFixed(1)}h
+              </span>
             </div>
-            {task.description && <p className="text-xs text-zinc-500 mt-1">{task.description}</p>}
+            <p className="text-xs text-zinc-500 mt-1 italic">"{chapter.tagline}"</p>
           </div>
         </div>
       </header>
@@ -96,7 +104,7 @@ export function ModuleView() {
         </div>
 
         {tab === 'prd' && (
-          <DocViewer content={docs.prd} placeholder="No PRD yet — trigger /pm in a /grok-teacher session" />
+          <DocViewer content={docs.prd} placeholder="No PRD yet" />
         )}
         {tab === 'architecture' && (
           <DocViewer content={docs.architecture} placeholder="No architecture doc yet" />
@@ -104,17 +112,42 @@ export function ModuleView() {
         {tab === 'stories' && (
           <DocViewer content={docs.stories} placeholder="No stories yet" />
         )}
-        {tab === 'tasklog' && (
-          <TaskStream taskId={taskId} initialEvents={initialEvents} />
-        )}
+        {tab === 'concepts' && (
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">Key Concepts</h2>
+              <div className="flex flex-wrap gap-2">
+                {chapter.key_concepts.map(c => (
+                  <span key={c} className="bg-zinc-800 border border-zinc-700 text-zinc-300 text-sm px-3 py-1.5 rounded">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
 
-        {task.graph_plan && (
-          <details className="mt-6">
-            <summary className="text-xs text-zinc-600 cursor-pointer hover:text-zinc-400">DAG Plan (raw)</summary>
-            <pre className="mt-2 text-xs text-zinc-500 bg-zinc-950 border border-zinc-800 rounded p-3 overflow-x-auto">
-              {JSON.stringify(JSON.parse(task.graph_plan), null, 2)}
-            </pre>
-          </details>
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">Build Steps</h2>
+              <ol className="space-y-2">
+                {chapter.build_steps.map((step, i) => (
+                  <li key={i} className="flex gap-3 text-sm">
+                    <span className="text-zinc-600 font-mono w-5 shrink-0">{i + 1}.</span>
+                    <span className="text-zinc-300">{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div>
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-zinc-500 mb-3">Types to Implement</h2>
+              <ul className="space-y-1">
+                {chapter.types_to_implement.map((t, i) => (
+                  <li key={i} className="text-sm text-zinc-400 font-mono bg-zinc-900 border border-zinc-800 rounded px-3 py-1.5">
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
         )}
       </div>
     </div>
