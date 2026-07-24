@@ -108,14 +108,14 @@
           "Implement recover() replaying log entries after last checkpoint"
         ],
         "types_to_implement": [
-          "Checkpoint (grok_build::storage::checkpoint)",
-          "CheckpointWriter (grok_build::storage::checkpoint)",
-          "MemoryLogEntry (grok_build::storage::memory_log)",
-          "LogOp enum (grok_build::storage::memory_log)",
-          "IndexManager (grok_build::storage::index_manager)",
-          "RecoveryManager (grok_build::storage::recovery)",
-          "StorageError / StorageResult (grok_build::storage)",
-          "SessionState (grok_build::session)"
+          "Checkpoint (synapse::storage::checkpoint)",
+          "CheckpointWriter (synapse::storage::checkpoint)",
+          "MemoryLogEntry (synapse::storage::memory_log)",
+          "LogOp enum (synapse::storage::memory_log)",
+          "IndexManager (synapse::storage::index_manager)",
+          "RecoveryManager (synapse::storage::recovery)",
+          "StorageError / StorageResult (synapse::storage)",
+          "SessionState (synapse::session)"
         ]
       },
       {
@@ -234,7 +234,7 @@
           "Pluggable Language Environment Providers"
         ],
         "build_steps": [
-          "Implement GrokHomePaths resolver in grok_home_paths.rs",
+          "Implement HomePaths resolver in home_paths.rs",
           "Define Config struct and I/O in config_toml_edit.rs",
           "Define EnvKind enum and EnvProvider trait",
           "Implement Python, Rust, and Builtin providers",
@@ -247,7 +247,7 @@
           "PythonEnv (workspace/src/python.rs)",
           "RustEnv (workspace/src/rust.rs)",
           "BuiltinDefaults (workspace/src/builtin.rs)",
-          "GrokHomePaths (workspace/src/grok_home_paths.rs)",
+          "HomePaths (workspace/src/home_paths.rs)",
           "ToolchainInfo"
         ]
       },
@@ -374,7 +374,7 @@
           "Write test_fork_session.rs for concurrent forking",
           "Write test_blitz_cancel.rs for rapid cancel races",
           "Write test_subagent_orphan_reconcile.rs",
-          "Write test_xai_session_update.rs for concurrent updates"
+          "Write test_session_concurrent_update.rs for concurrent updates"
         ],
         "types_to_implement": [
           "SessionId (session::acp)",
